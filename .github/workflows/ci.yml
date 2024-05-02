@@ -55,8 +55,8 @@ jobs:
 
       - name: Build and Test release binary
         run: |
-          cross build
-          cross test
+          cargo build
+          cargo test
 
   gh-release-artifacts:
     name: Upload ${{ matrix.target.name }} to GH Release
