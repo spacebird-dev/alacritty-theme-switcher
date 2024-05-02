@@ -1,0 +1,108 @@
+---
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1,4"
+  release:
+    types:
+      - published
+      - created
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features --workspace
+
+      - uses: mbrobbel/rustfmt-check@0.11.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+        # cant push to main directly
+        if: github.ref != 'refs/heads/main'
+
+      - name: Run pre-commit checks
+        uses: pre-commit/action@v3.0.1
+
+  build-test:
+    name: Build and Test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Enable cargo caching
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "{{ matrix.target.name }}"
+
+      - name: Build and Test release binary
+        run: |
+          cross build
+          cross test
+
+  gh-release-artifacts:
+    name: Upload ${{ matrix.target.name }} to GH Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-22.04
+    needs:
+      - build-test
+    strategy:
+      matrix:
+        target:
+          - name: aarch64-unknown-linux-gnu
+          - name: x86_64-unknown-linux-gnu
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Enable cargo caching
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "{{ matrix.target.name }}"
+
+      - name: Install Cross
+        run: |
+            cargo install cross --locked --git https://github.com/cross-rs/cross
+
+      - name: Build release binary
+        run: |
+          cross build --release --target ${{ matrix.target.name }}
+
+      - name: Create release asset archive
+        run: |
+            mkdir release
+            mv target/release/alacritty-theme-switcher release/
+            cp -r dist/completions release/
+            cd release
+            tar cvzf release.tar.gz .
+
+      - name: Upload release artifact
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: release.tar.gz
+          asset_name: alacritty-theme-switcher_${{ matrix.target.name }}.tar.gz
+          asset_content_type: application/tar+gzip

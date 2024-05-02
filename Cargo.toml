@@ -1,0 +1,16 @@
+[package]
+name = "alacritty-theme-switcher"
+version = "0.1.0"
+edition = "2021"
+authors = ["Max Hösel <max@spacebird.dev>"]
+description = "Easily switch between color themes for Alacritty"
+repository = "https://github.com/spacebird-dev/alacritty-theme-switcher"
+rust-version = "1.75"
+
+[dependencies]
+anyhow = "1.0.82"
+clap = { version = "4.5.4", features = ["derive", "unicode"] }
+itertools = "0.12.1"
+toml = "0.8.12"
+tracing = { version = "0.1.40", features = ["log"] }
+tracing-subscriber = "0.3.18"

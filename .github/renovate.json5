@@ -1,0 +1,5 @@
+{
+    "extends": [
+        "github>spacebird-dev/.github:renovate-config"
+    ],
+}

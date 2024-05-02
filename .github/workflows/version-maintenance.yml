@@ -1,0 +1,57 @@
+---
+name: Prepare a new App Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  version-maintenance:
+    name: Update version numbers according to PR labels
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - uses: release-drafter/release-drafter@v6
+        id: drafter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract version from release name
+        run: echo "RESOLVED_VERSION=$(echo ${{ steps.drafter.outputs.name }} | sed 's/v//')" >> $GITHUB_ENV
+
+      - name: Setup rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - name: Enable cargo caching
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-edit
+        run: cargo install cargo-edit --locked
+      - name: Update cargo version
+        run: |
+          cargo set-version "${{ env.RESOLVED_VERSION }}"
+          cargo update -w
+
+      - name: Open PR for release
+        uses: peter-evans/create-pull-request@v6
+        with:
+          base: main
+          add-paths: |
+            Cargo.toml
+            Cargo.lock
+          title: Update app version to ${{ env.RESOLVED_VERSION }}
+          body: |
+            One or more changes have been merged into main since the last release.
+
+            This PR updates the apps version number in accordance with the PR labels.
+
+            Merge this PR before publishing a new release.
+          commit-message: Update app version to ${{ env.RESOLVED_VERSION }}
+          branch: maintenance/version-bump
+          labels: chore
+          delete-branch: true

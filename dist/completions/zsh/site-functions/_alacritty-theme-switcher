@@ -1,0 +1,15 @@
+# shellcheck disable=all
+# sc currently doesn't support zsh
+
+_alacritty_theme_switcher_completion() {
+  local -a theme_files
+  local theme_dir="${XDG_CONFIG_HOME:-$HOME/.config/}/alacritty/themes/themes/"
+
+  # thanks GPT4
+  theme_files=("${(@f)$(print -rl -- "$theme_dir"*.toml(N:t:r))}")
+
+  # Set the completion state
+  _describe -t toml-files '.toml file' theme_files
+}
+
+compdef _alacritty_theme_switcher_completion alacritty-theme-switcher

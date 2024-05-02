@@ -1,0 +1,55 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+categories:
+  - title: "Major Changes"
+    labels:
+      - "pr-major"
+  - title: "Features and Minor Changes"
+    labels:
+      - "pr-minor"
+  - title: "Bug Fixes and Patches"
+    labels:
+      - "pr-patch"
+  - title: "Other"
+    labels:
+      - "docs"
+
+include-labels:
+  - pr-major
+  - pr-minor
+  - pr-patch
+  - docs
+exclude-contributors:
+  - github-actions
+  - github-actions[bot]
+
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels:
+      - "pr-major"
+  minor:
+    labels:
+      - "pr-minor"
+  patch:
+    labels:
+      - "pr-patch"
+  default: patch
+
+template: |
+  ⚠️ **Release Checklist** ⚠️
+
+  Do **NOT** publish this release until you've completed these steps:
+
+  1. Merge any outstanding version update PRs
+  2. Verify that the app version in project/lock files corresponds to this releases version
+  3. Ensure that the release notes are correct
+  4. Delete this section
+
+  ---
+
+  # Changes
+
+  $CHANGES

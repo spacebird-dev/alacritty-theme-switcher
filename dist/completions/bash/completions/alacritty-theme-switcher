@@ -1,0 +1,29 @@
+# shellcheck shell=bash
+# helpfully contributed by GPT4
+
+_alacritty_theme_switcher_completion() {
+    # The word being completed (the current partial word)
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # The directory containing files for completion
+    local theme_dir="${XDG_CONFIG_HOME:-$HOME/.config/}/alacritty/themes/themes"
+
+    # Generate a list of files with extensions removed
+    local themes
+    themes=$(find "$theme_dir" -maxdepth 1 -name "*.toml" -exec basename {} \; | awk '{printf "%s ",$0}' | sed 's/.toml//g')
+
+    # The resulting completions should be put into the COMPREPLY array
+    mapfile -t COMPREPLY < <(compgen -W "${themes}" -- "${cur}")
+
+    # Disable file completion if no filenames match, otherwise Bash would
+    # add its default completions on top of ours
+    if [ ${#COMPREPLY[@]} -eq 0 ]; then
+        compopt +o default
+    else
+        compopt -o default
+    fi
+
+    return 0
+}
+
+complete -F _alacritty_theme_switcher_completion alacritty-theme-switcher
