@@ -91,7 +91,7 @@ jobs:
       - name: Create release asset archive
         run: |
             mkdir release
-            mv target/release/alacritty-theme-switcher release/
+            mv target/${{ matrix.target.name }}/release/alacritty-theme-switcher release/
             cp -r dist/completions release/
             cd release
             tar cvzf release.tar.gz .
