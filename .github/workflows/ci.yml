@@ -94,7 +94,8 @@ jobs:
             mv target/${{ matrix.target.name }}/release/alacritty-theme-switcher release/
             cp -r dist/completions release/
             cd release
-            tar cvzf release.tar.gz .
+            touch release.tar.gz
+            tar --exclude=release.tar.gz cvzf release.tar.gz .
 
       - name: Upload release artifact
         id: upload-release-asset
