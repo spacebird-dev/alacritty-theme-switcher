@@ -6,6 +6,9 @@ authors = ["Max Hösel <max@spacebird.dev>"]
 description = "Easily switch between color themes for Alacritty"
 repository = "https://github.com/spacebird-dev/alacritty-theme-switcher"
 rust-version = "1.75"
+license-file = "LICENSE"
+readme = "README.md"
+exclude = [".github", "dist", "media", "Makefile", ".pre-commit-config.yaml"]
 
 [dependencies]
 anyhow = "1.0.82"
