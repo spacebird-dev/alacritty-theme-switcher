@@ -2,7 +2,8 @@
 
 A simple tool to quickly switch between different themes for [alacritty](https://alacritty.org/index.html), with shell completion!
 
-![./media/demo.mp4](./media/demo.mp4)
+
+![./media/demo.gif](./media/demo.gif)
 
 ## Overview
 
