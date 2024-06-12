@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features --workspace
 
-      - uses: mbrobbel/rustfmt-check@0.11.0
+      - uses: mbrobbel/rustfmt-check@0.12.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
         # cant push to main directly
