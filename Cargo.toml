@@ -1,6 +1,6 @@
 [package]
 name = "alacritty-theme-switcher"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 authors = ["Max Hösel <max@spacebird.dev>"]
 description = "Easily switch between color themes for Alacritty"
