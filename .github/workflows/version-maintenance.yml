@@ -38,7 +38,7 @@ jobs:
           cargo update -w
 
       - name: Open PR for release
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           base: main
           add-paths: |
