@@ -3,18 +3,23 @@ use std::{
     ffi::OsStr,
     fs::{read_dir, read_to_string, write},
     path::{Path, PathBuf},
+    process::Command,
+    sync::LazyLock,
 };
 
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::{ArgGroup, Parser};
 use itertools::Itertools;
+use semver::Version;
 use toml::{Table, Value};
 use tracing::warn;
 
 const THEME_DIR_NAME: &str = "./themes/themes/";
 const CONFIG_FILE_PATHS: &[&str] = &["./alacritty.toml", "./alacritty/alacritty.toml"];
 
-const CONFIG_IMPORT_KEY: &str = "import";
+const CONFIG_TABLE_NAME: &str = "general";
+const CONFIG_KEY: &str = "import";
+static CONFIG_TABLE_SINCE: LazyLock<Version> = LazyLock::new(|| Version::new(0, 14, 0));
 
 // alacritty-theme-switcher
 ///
@@ -36,7 +41,85 @@ struct Args {
     config_file: Option<PathBuf>,
 }
 
-fn expand_home(path: &Path) -> Result<PathBuf, Error> {
+fn load_imports(config_file: &Path) -> Result<Vec<PathBuf>> {
+    let config: Table = read_to_string(config_file)
+        .context("could not read alacritty config file")?
+        .parse()?;
+    let version = alacritty_version()?;
+
+    let import_values = if version >= *CONFIG_TABLE_SINCE {
+        config
+            .get(CONFIG_TABLE_NAME)
+            .and_then(|t| t.get(CONFIG_KEY))
+    } else {
+        config.get(CONFIG_KEY)
+    }
+    .context("Could not find general.imports or imports in alacritty config")?
+    .as_array()
+    .context("imports must be an array")?;
+    let imports = match import_values
+        .iter()
+        .map(|v| match v.as_str() {
+            Some(s) => Ok(PathBuf::from(s)),
+            None => Err(anyhow!("Imports must be a string")),
+        })
+        .collect::<Result<Vec<_>>>()
+    {
+        Ok(imports) => imports,
+        Err(e) => return Err(e),
+    };
+    Ok(imports)
+}
+
+fn save_imports(config_file: &Path, imports: Vec<PathBuf>) -> Result<()> {
+    let version = alacritty_version()?;
+    let mut config: Table = read_to_string(config_file)
+        .context("could not read alacritty config file")?
+        .parse()?;
+    let imports = Value::Array(
+        imports
+            .into_iter()
+            .map(|path| Value::String(path.to_string_lossy().to_string()))
+            .collect_vec(),
+    );
+
+    if version >= *CONFIG_TABLE_SINCE {
+        config[CONFIG_TABLE_NAME][CONFIG_KEY] = imports;
+    } else {
+        config[CONFIG_KEY] = imports;
+    }
+
+    write(
+        config_file,
+        toml::to_string_pretty(&config).context("could not write alacritty config")?,
+    )
+    .context("could not write alacritty config")
+}
+
+fn alacritty_version() -> Result<Version> {
+    let version_output = Command::new("alacritty")
+        .arg("--version")
+        .output()
+        .context("Could not launch alacritty to determine version")?;
+
+    match version_output.status.success() {
+        true => {
+            let version_line = String::from_utf8(version_output.stdout)
+                .context("alacritty version line is not a valid UTF-8 String")?;
+            Version::parse(
+                version_line
+                    .split_whitespace()
+                    .take(2)
+                    .last()
+                    .context("Failed parsing alacrity version line")?,
+            )
+            .context("Failed to parse Alacritts version")
+        }
+        false => Err(anyhow!("alacritty --version returned non-zero exit status")),
+    }
+}
+
+fn expand_home(path: &Path) -> Result<PathBuf> {
     env::var("HOME")
         .context("Could not expand ~ because $HOME is not set")
         .map(|home| PathBuf::from(home).join(path.strip_prefix("~/").unwrap_or(path)))
@@ -72,19 +155,9 @@ fn list_themes(theme_dir: &Path) -> Result<()> {
 }
 
 fn set_theme_file(theme_file: &Path, config_file: &Path) -> Result<()> {
-    let mut config: Table = read_to_string(config_file)
-        .context("could not read alacritty config file")?
-        .parse()?;
-    let mut updated_imports = config[CONFIG_IMPORT_KEY]
-        .as_array()
-        .context("'imports' in alacritty config is not in expected format")?
+    let mut updated_imports = load_imports(config_file)?
         .iter()
         .filter_map(|path| {
-            let Some(path) = path.as_str() else {
-                return Some(Err(anyhow!(
-                    "invalid imports content in alacritty config: {path:?}"
-                )));
-            };
             let path = match expand_home(&PathBuf::from(path)) {
                 Ok(path) => path,
                 Err(e) => {
@@ -93,20 +166,16 @@ fn set_theme_file(theme_file: &Path, config_file: &Path) -> Result<()> {
             };
             // safe, we select all files from a directory
             if !path.starts_with(theme_file.parent().unwrap()) {
-                Some(Ok(Value::String(path.to_string_lossy().to_string())))
+                Some(Ok(path))
             } else {
                 None
             }
         })
         .collect::<Result<Vec<_>, _>>()?;
-    updated_imports.push(Value::String(theme_file.to_string_lossy().to_string()));
+    updated_imports.push(theme_file.to_path_buf());
 
-    config[CONFIG_IMPORT_KEY] = Value::Array(updated_imports);
-    write(
-        config_file,
-        toml::to_string_pretty(&config).context("could not write alacritty config")?,
-    )
-    .context("could not write alacritty config")?;
+    save_imports(config_file, updated_imports)?;
+
     Ok(())
 }
 
