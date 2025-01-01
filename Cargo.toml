@@ -13,7 +13,7 @@ exclude = [".github", "dist", "media", "Makefile", ".pre-commit-config.yaml"]
 [dependencies]
 anyhow = "1.0.82"
 clap = { version = "4.5.4", features = ["derive", "unicode"] }
-itertools = "0.13.0"
+itertools = "0.14.0"
 semver = "1.0.23"
 toml = "0.8.12"
 tracing = { version = "0.1.40", features = ["log"] }
