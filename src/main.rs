@@ -57,17 +57,13 @@ fn load_imports(config_file: &Path) -> Result<Vec<PathBuf>> {
     .context("Could not find general.imports or imports in alacritty config")?
     .as_array()
     .context("imports must be an array")?;
-    let imports = match import_values
+    let imports = import_values
         .iter()
         .map(|v| match v.as_str() {
             Some(s) => Ok(PathBuf::from(s)),
             None => Err(anyhow!("Imports must be a string")),
         })
-        .collect::<Result<Vec<_>>>()
-    {
-        Ok(imports) => imports,
-        Err(e) => return Err(e),
-    };
+        .collect::<Result<Vec<_>>>()?;
     Ok(imports)
 }
 
