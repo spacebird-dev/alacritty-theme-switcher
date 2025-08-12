@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -71,7 +71,7 @@ jobs:
           - name: x86_64-unknown-linux-gnu
     steps:
       - name: Check out codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -116,7 +116,7 @@ jobs:
       - build-test
     steps:
       - name: Check out codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
